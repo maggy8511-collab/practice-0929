@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World - Flask 一頁式網站</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        .badge {
+            display: inline-block;
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #1e293b;
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        p.subtitle {
+            color: #64748b;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .interactive-section {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 25px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            transform: scale(1.02);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        #message {
+            margin-top: 18px;
+            color: #10b981;
+            font-weight: 600;
+            font-size: 1.1rem;
+            min-height: 28px;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <span class="badge">Flask Web Application</span>
+        <h1>👋 {{ title }}</h1>
+        <p class="subtitle">{{ message }}</p>
+
+        <div class="interactive-section">
+            <button class="btn" onclick="sayHello()">點擊打招呼！</button>
+            <div id="message"></div>
+        </div>
+
+        <div class="footer">
+            Powered by Python & Flask
+        </div>
+    </div>
+
+    <script>
+        const greetings = [
+            "✨ 歡迎來到 Flask 的世界！",
+            "🚀 伺服器運作正常中！",
+            "🌟 祝你有個美好的一天！",
+            "🎉 一頁式網站建置成功！"
+        ];
+        let index = 0;
+
+        function sayHello() {
+            const msgElement = document.getElementById('message');
+            msgElement.style.opacity = '0';
+            setTimeout(() => {
+                msgElement.textContent = greetings[index % greetings.length];
+                msgElement.style.opacity = '1';
+                index++;
+            }, 150);
+        }
+    </script>
+</body>
+</html>
