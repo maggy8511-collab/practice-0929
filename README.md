@@ -1,5 +1,7 @@
 # Flask Practice 一頁式網站 🚀
 
+[![Flask CI/CD Pipeline](https://github.com/maggy8511-collab/practice-0929/actions/workflows/cicd.yml/badge.svg)](https://github.com/maggy8511-collab/practice-0929/actions/workflows/cicd.yml)
+
 這是一個使用 Python Flask 框架所建立的現代化一頁式網站，具備自動化 CI/CD 測試與部署流程。
 
 ## 專案架構
