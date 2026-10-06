@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}客戶管理{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">客戶資料維護</h3>
+        <p class="text-muted small mb-0">管理系統內所有客戶聯絡方式與收件地址</p>
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newCustomerModal">
+        <i class="bi bi-person-plus-fill me-1"></i> 新增客戶
+    </button>
+</div>
+
+<div class="card bg-white shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 120px;">客戶編號</th>
+                    <th style="width: 140px;">客戶名稱</th>
+                    <th style="width: 160px;">電話號碼</th>
+                    <th>地址</th>
+                    <th style="width: 160px;" class="text-end">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td class="fw-bold text-secondary">{{ c.客戶編號 }}</td>
+                    <td class="fw-semibold text-primary">{{ c.名稱 }}</td>
+                    <td>{{ c.電話 or '未提供' }}</td>
+                    <td class="text-muted">{{ c.地址 or '未提供' }}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary me-1" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editCustomerModal"
+                                data-id="{{ c.客戶編號 }}"
+                                data-name="{{ c.名稱 }}"
+                                data-phone="{{ c.電話 or '' }}"
+                                data-address="{{ c.地址 or '' }}">
+                            <i class="bi bi-pencil-square"></i> 編輯
+                        </button>
+                        <form method="POST" action="{{ url_for('delete_customer', customer_id=c.客戶編號) }}" class="d-inline" onsubmit="return confirm('確定要刪除客戶 [{{ c.名稱 }}] 嗎？若已有關聯訂單將無法刪除。');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i> 刪除
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">目前暫無客戶資料</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 新增客戶 Modal -->
+<div class="modal fade" id="newCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('add_customer') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-person-plus text-primary me-2"></i>新增客戶資料</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">客戶編號 (PK)</label>
+                        <input type="text" class="form-control" name="customer_id" placeholder="例如: C006" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">客戶名稱</label>
+                        <input type="text" class="form-control" name="name" placeholder="例如: 陳美麗" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">電話號碼</label>
+                        <input type="text" class="form-control" name="phone" placeholder="例如: 0912-345-678">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">地址</label>
+                        <input type="text" class="form-control" name="address" placeholder="例如: 台北市中正區重慶南路一段 10 號">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">確認新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 編輯客戶 Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" id="editCustomerForm" action="">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil text-primary me-2"></i>編輯客戶資料</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">客戶編號 (無法變更)</label>
+                        <input type="text" class="form-control bg-light" id="edit_customer_id" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">客戶名稱</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">電話號碼</label>
+                        <input type="text" class="form-control" id="edit_phone" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">地址</label>
+                        <input type="text" class="form-control" id="edit_address" name="address">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">儲存變更</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const editModal = document.getElementById('editCustomerModal');
+    if (editModal) {
+        editModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const name = button.getAttribute('data-name');
+            const phone = button.getAttribute('data-phone');
+            const address = button.getAttribute('data-address');
+
+            document.getElementById('edit_customer_id').value = id;
+            document.getElementById('edit_name').value = name;
+            document.getElementById('edit_phone').value = phone;
+            document.getElementById('edit_address').value = address;
+            document.getElementById('editCustomerForm').action = "/customer/edit/" + encodeURIComponent(id);
+        });
+    }
+</script>
+{% endblock %}

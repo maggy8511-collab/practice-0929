@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}出貨單 - {{ order.訂單編號 }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div>
+        <a href="{{ url_for('list_orders') }}" class="text-decoration-none text-muted small">
+            <i class="bi bi-arrow-left"></i> 返回訂單列表
+        </a>
+        <h3 class="fw-bold mb-0 mt-1">訂單專屬出貨單</h3>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary" onclick="window.print()">
+            <i class="bi bi-printer-fill me-1"></i> 列印出貨單
+        </button>
+    </div>
+</div>
+
+<!-- 出貨單實體卡片 -->
+<div class="card shadow-sm bg-white p-4 p-md-5 print-container" id="shippingNote">
+    <!-- 單頭：公司資訊與出貨單標題 -->
+    <div class="row align-items-center border-bottom pb-4 mb-4">
+        <div class="col-sm-7">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-box-seam-fill text-primary fs-2"></i>
+                <h4 class="fw-bold mb-0">OrderHub 智慧倉儲出貨單</h4>
+            </div>
+            <p class="text-muted small mb-0">
+                出貨單號：<strong class="text-dark fs-6">{{ order.訂單編號 }}</strong> | 
+                開立日期：{{ order.訂單日期 }}
+            </p>
+        </div>
+        <div class="col-sm-5 text-sm-end mt-3 mt-sm-0">
+            <span class="status-pill badge-status-{{ order.狀態 }} fs-6 px-3 py-2">
+                狀態：{{ order.狀態 }}
+            </span>
+        </div>
+    </div>
+
+    <!-- 客戶資訊與 QRCode 條碼區 -->
+    <div class="row g-4 mb-4 align-items-center">
+        <!-- 客戶收件資訊 -->
+        <div class="col-md-7">
+            <div class="p-3 bg-light rounded-3 border">
+                <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">
+                    <i class="bi bi-truck me-1"></i> 收件客戶配送資訊
+                </h6>
+                <div class="row g-2 small">
+                    <div class="col-4 text-muted">客戶編號：</div>
+                    <div class="col-8 fw-semibold">{{ order.客戶編號 }}</div>
+
+                    <div class="col-4 text-muted">收件姓名：</div>
+                    <div class="col-8 fw-bold text-dark fs-6">{{ order.客戶名稱 }}</div>
+
+                    <div class="col-4 text-muted">聯絡電話：</div>
+                    <div class="col-8 fw-semibold">{{ order.電話 or '未提供' }}</div>
+
+                    <div class="col-4 text-muted">送貨地址：</div>
+                    <div class="col-8 text-break fw-semibold">{{ order.地址 or '自取 / 門市取貨' }}</div>
+
+                    <div class="col-4 text-muted">負責業務：</div>
+                    <div class="col-8">{{ order.業務人員 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 專屬 QRCode 條碼區 -->
+        <div class="col-md-5 text-center">
+            <div class="p-3 border rounded-3 bg-light d-inline-block shadow-sm">
+                <div class="mb-2">
+                    {% if qr_code_data %}
+                    <img src="{{ qr_code_data }}" alt="出貨單 QRCode" class="img-fluid rounded" style="width: 140px; height: 140px;">
+                    {% else %}
+                    <div id="qrcodeCanvas"></div>
+                    {% endif %}
+                </div>
+                <div class="small fw-bold text-secondary">
+                    <i class="bi bi-qr-code-scan me-1 text-primary"></i>出貨單專屬 QRCode
+                </div>
+                <span class="text-muted smaller d-block mt-1">掃描快速驗貨與追蹤單態</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 訂購商品明細表 -->
+    <div class="mb-4">
+        <h6 class="fw-bold text-dark mb-3">
+            <i class="bi bi-list-check text-primary me-1"></i> 出貨品項明細 (共 {{ items|length }} 項)
+        </h6>
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th style="width: 110px;">商品編號</th>
+                        <th>商品名稱</th>
+                        <th style="width: 110px;">分類</th>
+                        <th style="width: 130px;" class="text-end">下單當時單價</th>
+                        <th style="width: 90px;" class="text-center">數量</th>
+                        <th style="width: 140px;" class="text-end">小計金額</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td class="text-center text-muted small">{{ loop.index }}</td>
+                        <td class="text-secondary small">{{ item.商品編號 }}</td>
+                        <td class="fw-semibold text-dark">{{ item.商品名稱 }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ item.分類 }}</span></td>
+                        <td class="text-end text-muted">NT$ {{ "{:,.0f}".format(item.單價) }}</td>
+                        <td class="text-center fw-bold">{{ item.數量 }}</td>
+                        <td class="text-end fw-bold text-dark">
+                            NT$ {{ "{:,.0f}".format(item.數量 * item.單價) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-light">
+                        <td colspan="5" class="text-muted small">
+                            * 註：單價紀錄為下單成立當時之有效價格，後續商品定價調整不影響本單結算金額。
+                        </td>
+                        <td class="text-center fw-bold">總計件數</td>
+                        <td class="text-center fw-bold text-primary fs-6">{{ total_qty }} 件</td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" class="border-0"></td>
+                        <td class="text-end fw-bold text-dark fs-5 align-middle">應收總額</td>
+                        <td class="text-end fw-bold text-success fs-4 align-middle">
+                            NT$ {{ "{:,.0f}".format(grand_total) }}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- 倉儲物流簽核欄 (實體單據必備) -->
+    <div class="row pt-4 mt-2 border-top g-3 text-muted small">
+        <div class="col-4">
+            <p class="mb-4">揀貨 / 驗核人員簽章：</p>
+            <div class="border-bottom" style="width: 80%;"></div>
+        </div>
+        <div class="col-4">
+            <p class="mb-4">出貨物流人員簽章：</p>
+            <div class="border-bottom" style="width: 80%;"></div>
+        </div>
+        <div class="col-4">
+            <p class="mb-4">客戶收訖簽章：</p>
+            <div class="border-bottom" style="width: 80%;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

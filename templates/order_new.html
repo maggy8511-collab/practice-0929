@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}建立新訂單{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">建立新訂單</h3>
+        <p class="text-muted small mb-0">選擇下單客戶並一次勾選多項商品建立明細</p>
+    </div>
+    <a href="{{ url_for('list_orders') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> 返回訂單列表
+    </a>
+</div>
+
+<form method="POST" action="{{ url_for('new_order') }}" id="orderForm">
+    <div class="row g-4">
+        <!-- 左側：訂單基本資料 -->
+        <div class="col-lg-4">
+            <div class="card p-3 shadow-sm bg-white sticky-top" style="top: 80px;">
+                <h5 class="fw-bold mb-3 border-bottom pb-2">
+                    <i class="bi bi-info-circle text-primary me-2"></i>訂單基本資料
+                </h5>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">訂單編號 (自動產生)</label>
+                    <input type="text" class="form-control bg-light" name="order_id" value="{{ suggested_order_id }}" required>
+                    <div class="form-text small">可手動修改或採用自動產生之編號</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">選擇下單客戶 <span class="text-danger">*</span></label>
+                    <select class="form-select" name="customer_id" required>
+                        <option value="" disabled selected>-- 請選擇客戶 (下拉選單) --</option>
+                        {% for c in customers %}
+                        <option value="{{ c.客戶編號 }}">
+                            [{{ c.客戶編號 }}] {{ c.名稱 }} - {{ c.電話 or '無電話' }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">訂單日期 <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" name="order_date" value="{{ today }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">業務人員 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="salesperson" value="王志強" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">訂單初始狀態</label>
+                    <select class="form-select" name="status">
+                        <option value="處理中" selected>🕒 處理中</option>
+                        <option value="已出貨">🚚 已出貨</option>
+                        <option value="已完成">✅ 已完成</option>
+                    </select>
+                </div>
+
+                <hr>
+
+                <!-- 金額即時統計 -->
+                <div class="p-3 bg-light rounded-3 mb-3 border">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted small">已勾選商品項目：</span>
+                        <strong id="selectedCount" class="text-primary">0 項</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">訂單試算總金額：</span>
+                        <h4 class="text-success fw-bold mb-0" id="totalAmount">NT$ 0</h4>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fs-6 fw-bold">
+                    <i class="bi bi-check-circle-fill me-1"></i> 確認送出並建立訂單
+                </button>
+            </div>
+        </div>
+
+        <!-- 右側：商品選購清單 (可一次勾選多項並填數量) -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm bg-white">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="fw-bold mb-0"><i class="bi bi-cart-check text-primary me-2"></i>勾選商品與設定數量</h5>
+                        <p class="text-muted smaller mb-0">勾選多項商品並填寫下單數量，系統將自動鎖定「下單當下價格」</p>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btnSelectAll">全選 / 取消全選</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;" class="text-center">勾選</th>
+                                <th>商品資訊</th>
+                                <th style="width: 130px;">目前售價</th>
+                                <th style="width: 100px;">剩餘庫存</th>
+                                <th style="width: 140px;">下單數量</th>
+                                <th style="width: 140px;" class="text-end">小計金額</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in products %}
+                            <tr id="row_{{ p.商品編號 }}" class="product-row">
+                                <td class="text-center">
+                                    <input type="checkbox" 
+                                           class="form-check-input product-check" 
+                                           name="selected_products" 
+                                           value="{{ p.商品編號 }}" 
+                                           id="chk_{{ p.商品編號 }}"
+                                           data-id="{{ p.商品編號 }}"
+                                           data-price="{{ p.單價 }}"
+                                           data-stock="{{ p.庫存 }}">
+                                </td>
+                                <td>
+                                    <label class="form-check-label fw-semibold cursor-pointer mb-0 d-block" for="chk_{{ p.商品編號 }}">
+                                        {{ p.名稱 }}
+                                    </label>
+                                    <span class="text-muted smaller">編號: {{ p.商品編號 }} | 分類: {{ p.分類 }}</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark">NT$ {{ "{:,.0f}".format(p.單價) }}</span>
+                                    <input type="hidden" name="price_{{ p.商品編號 }}" value="{{ p.單價 }}">
+                                </td>
+                                <td>
+                                    {% if p.庫存 > 0 %}
+                                    <span class="badge bg-light text-dark border">{{ p.庫存 }}</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">缺貨中</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" 
+                                               class="form-control product-qty text-center" 
+                                               name="qty_{{ p.商品編號 }}" 
+                                               id="qty_{{ p.商品編號 }}"
+                                               value="1" 
+                                               min="1" 
+                                               {% if p.庫存 > 0 %}max="{{ p.庫存 }}"{% else %}disabled{% endif %}
+                                               disabled>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <span class="fw-bold text-secondary subtotal-text" id="subtotal_{{ p.商品編號 }}">NT$ 0</span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">目前暫無在庫商品</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const checkboxes = document.querySelectorAll(".product-check");
+        const qtyInputs = document.querySelectorAll(".product-qty");
+        const selectedCountElem = document.getElementById("selectedCount");
+        const totalAmountElem = document.getElementById("totalAmount");
+        const btnSelectAll = document.getElementById("btnSelectAll");
+        const orderForm = document.getElementById("orderForm");
+
+        function calculateTotals() {
+            let count = 0;
+            let total = 0;
+
+            checkboxes.forEach(chk => {
+                const id = chk.getAttribute("data-id");
+                const price = parseFloat(chk.getAttribute("data-price")) || 0;
+                const qtyInput = document.getElementById("qty_" + id);
+                const subtotalText = document.getElementById("subtotal_" + id);
+                const row = document.getElementById("row_" + id);
+
+                if (chk.checked) {
+                    count++;
+                    qtyInput.disabled = false;
+                    row.classList.add("table-primary");
+                    const qty = parseInt(qtyInput.value) || 1;
+                    const subtotal = price * qty;
+                    total += subtotal;
+                    subtotalText.textContent = "NT$ " + subtotal.toLocaleString();
+                    subtotalText.classList.remove("text-secondary");
+                    subtotalText.classList.add("text-primary");
+                } else {
+                    qtyInput.disabled = true;
+                    row.classList.remove("table-primary");
+                    subtotalText.textContent = "NT$ 0";
+                    subtotalText.classList.remove("text-primary");
+                    subtotalText.classList.add("text-secondary");
+                }
+            });
+
+            selectedCountElem.textContent = count + " 項";
+            totalAmountElem.textContent = "NT$ " + total.toLocaleString();
+        }
+
+        checkboxes.forEach(chk => {
+            chk.addEventListener("change", calculateTotals);
+        });
+
+        qtyInputs.forEach(input => {
+            input.addEventListener("input", calculateTotals);
+            input.addEventListener("change", calculateTotals);
+        });
+
+        let allSelected = false;
+        btnSelectAll.addEventListener("click", function() {
+            allSelected = !allSelected;
+            checkboxes.forEach(chk => {
+                const stock = parseInt(chk.getAttribute("data-stock")) || 0;
+                if (stock > 0 || !allSelected) {
+                    chk.checked = allSelected;
+                }
+            });
+            calculateTotals();
+        });
+
+        orderForm.addEventListener("submit", function(e) {
+            let hasChecked = false;
+            checkboxes.forEach(chk => {
+                if (chk.checked) hasChecked = true;
+            });
+
+            if (!hasChecked) {
+                e.preventDefault();
+                alert("請至少勾選一項要購買的商品！");
+            }
+        });
+
+        calculateTotals();
+    });
+</script>
+{% endblock %}

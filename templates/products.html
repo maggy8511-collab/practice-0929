@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}商品管理{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h3 class="fw-bold mb-1">商品庫存與價格維護</h3>
+        <p class="text-muted small mb-0">管理商品資訊、目前售價與庫存數量</p>
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProductModal">
+        <i class="bi bi-box-seam-fill me-1"></i> 新增商品
+    </button>
+</div>
+
+<!-- 說明提示框 -->
+<div class="alert alert-info py-2 px-3 small d-flex align-items-center gap-2 mb-4">
+    <i class="bi bi-shield-check fs-5 text-info"></i>
+    <span><strong>價格保護機制：</strong>在此修改商品售價僅影響未來新訂單，<strong>過去已成立之歷史訂單明細金額將被嚴格保留</strong>，絕不受到改價影響。</span>
+</div>
+
+<div class="card bg-white shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 120px;">商品編號</th>
+                    <th>商品名稱</th>
+                    <th style="width: 140px;">分類</th>
+                    <th style="width: 150px;">目前售價</th>
+                    <th style="width: 120px;">庫存狀態</th>
+                    <th style="width: 160px;" class="text-end">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td class="fw-bold text-secondary">{{ p.商品編號 }}</td>
+                    <td class="fw-semibold text-dark">{{ p.名稱 }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ p.分類 }}</span></td>
+                    <td class="fw-bold text-primary">NT$ {{ "{:,.0f}".format(p.單價) }}</td>
+                    <td>
+                        {% if p.庫存 <= 10 %}
+                        <span class="badge bg-danger-subtle text-danger px-2 py-1"><i class="bi bi-exclamation-triangle me-1"></i>庫存吃緊 ({{ p.庫存 }})</span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success px-2 py-1"><i class="bi bi-check-circle me-1"></i>{{ p.庫存 }} 件</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary me-1" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editProductModal"
+                                data-id="{{ p.商品編號 }}"
+                                data-name="{{ p.名稱 }}"
+                                data-price="{{ p.單價 }}"
+                                data-stock="{{ p.庫存 }}"
+                                data-category="{{ p.分類 }}">
+                            <i class="bi bi-pencil-square"></i> 編輯
+                        </button>
+                        <form method="POST" action="{{ url_for('delete_product', product_id=p.商品編號) }}" class="d-inline" onsubmit="return confirm('確定要刪除商品 [{{ p.名稱 }}] 嗎？若已被下單將無法刪除。');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i> 刪除
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">目前暫無商品資料</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 新增商品 Modal -->
+<div class="modal fade" id="newProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('add_product') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-box-seam text-primary me-2"></i>新增商品項目</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">商品編號 (PK)</label>
+                        <input type="text" class="form-control" name="product_id" placeholder="例如: P006" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">商品名稱</label>
+                        <input type="text" class="form-control" name="name" placeholder="例如: 藍牙無線滑鼠" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">單價 (不可為負)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="price" min="0" step="1" placeholder="890" required>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">庫存 (不可為負)</label>
+                            <input type="number" class="form-control" name="stock" min="0" step="1" placeholder="50" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">分類</label>
+                        <input type="text" class="form-control" name="category" placeholder="例如: 電腦周邊" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">確認新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 編輯商品 Modal -->
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" id="editProductForm" action="">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil text-primary me-2"></i>編輯商品資訊與售價</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">商品編號 (無法變更)</label>
+                        <input type="text" class="form-control bg-light" id="edit_product_id" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">商品名稱</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">單價 (NT$)</label>
+                            <input type="number" class="form-control" id="edit_price" name="price" min="0" step="1" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">庫存數量</label>
+                            <input type="number" class="form-control" id="edit_stock" name="stock" min="0" step="1" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">商品分類</label>
+                        <input type="text" class="form-control" id="edit_category" name="category" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">儲存變更</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const editModal = document.getElementById('editProductModal');
+    if (editModal) {
+        editModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const name = button.getAttribute('data-name');
+            const price = button.getAttribute('data-price');
+            const stock = button.getAttribute('data-stock');
+            const category = button.getAttribute('data-category');
+
+            document.getElementById('edit_product_id').value = id;
+            document.getElementById('edit_name').value = name;
+            document.getElementById('edit_price').value = price;
+            document.getElementById('edit_stock').value = stock;
+            document.getElementById('edit_category').value = category;
+            document.getElementById('editProductForm').action = "/product/edit/" + encodeURIComponent(id);
+        });
+    }
+</script>
+{% endblock %}

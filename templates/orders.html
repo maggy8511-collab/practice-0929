@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}訂單管理{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">訂單管理中心</h3>
+        <p class="text-muted small mb-0">瀏覽全站訂單、直接切換出貨狀態、產生專屬出貨單與 QR Code</p>
+    </div>
+    <a href="{{ url_for('new_order') }}" class="btn btn-primary">
+        <i class="bi bi-cart-plus-fill me-1"></i> 新增訂單
+    </a>
+</div>
+
+<div class="card bg-white shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 140px;">訂單編號</th>
+                    <th>客戶名稱</th>
+                    <th style="width: 110px;">訂單日期</th>
+                    <th style="width: 100px;">業務人員</th>
+                    <th style="width: 110px;">總金額</th>
+                    <th style="width: 170px;">訂單狀態 (可直接更新)</th>
+                    <th style="width: 200px;" class="text-end">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in orders %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('order_detail', order_id=o.訂單編號) }}" class="fw-bold text-decoration-none text-primary">
+                            {{ o.訂單編號 }}
+                        </a>
+                    </td>
+                    <td>
+                        <div class="fw-semibold">{{ o.客戶名稱 }}</div>
+                        <span class="text-muted smaller"><i class="bi bi-telephone me-1"></i>{{ o.電話 or '無電話' }}</span>
+                    </td>
+                    <td class="text-muted small">{{ o.訂單日期 }}</td>
+                    <td><span class="badge bg-light text-dark border">{{ o.業務人員 }}</span></td>
+                    <td class="fw-bold text-success">NT$ {{ "{:,.0f}".format(o.總金額 or 0) }}</td>
+                    <td>
+                        <!-- 直接切換狀態下拉選單 (表單送出即時更新) -->
+                        <form method="POST" action="{{ url_for('update_order_status', order_id=o.訂單編號) }}" class="d-inline">
+                            <select name="status" class="form-select form-select-sm fw-semibold {% if o.狀態 == '處理中' %}text-warning bg-warning-subtle{% elif o.狀態 == '已出貨' %}text-primary bg-primary-subtle{% elif o.狀態 == '已完成' %}text-success bg-success-subtle{% else %}text-secondary bg-secondary-subtle{% endif %}" onchange="this.form.submit()">
+                                <option value="處理中" {% if o.狀態 == '處理中' %}selected{% endif %}>🕒 處理中</option>
+                                <option value="已出貨" {% if o.狀態 == '已出貨' %}selected{% endif %}>🚚 已出貨</option>
+                                <option value="已完成" {% if o.狀態 == '已完成' %}selected{% endif %}>✅ 已完成</option>
+                                <option value="已取消" {% if o.狀態 == '已取消' %}selected{% endif %}>❌ 已取消</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('order_detail', order_id=o.訂單編號) }}" class="btn btn-sm btn-outline-primary me-1" title="查看出貨單與QR Code">
+                            <i class="bi bi-qr-code me-1"></i> 出貨單
+                        </a>
+                        <form method="POST" action="{{ url_for('delete_order', order_id=o.訂單編號) }}" class="d-inline" onsubmit="return confirm('確定要刪除訂單 [{{ o.訂單編號 }}] 嗎？明細項目將一併清除。');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="刪除訂單">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">目前暫無訂單資料</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
